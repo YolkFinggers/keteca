@@ -1,56 +1,51 @@
 <?php
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 
-if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    http_response_code(405);
-    echo json_encode(["success" => false, "error" => "Method not allowed"]);
+// Get JSON input
+$input = json_decode(file_get_contents("php://input"), true);
+
+if (!$input) {
+    echo json_encode(["success" => false, "error" => "No input received"]);
     exit;
 }
 
-$raw = file_get_contents("php://input");
-$data = json_decode($raw, true);
+$name = htmlspecialchars($input["name"] ?? "");
+$email = htmlspecialchars($input["address"] ?? ""); // adjust based on your field naming
+$subject = htmlspecialchars($input["Project"] ?? "Website Inquiry");
+$message = htmlspecialchars($input["name-2"] ?? "No message provided");
 
-if (!$data) {
-    http_response_code(400);
-    echo json_encode(["success" => false, "error" => "Invalid JSON"]);
-    exit;
-}
+require "vendor/autoload.php";
 
-// Extract fields
-$name = htmlspecialchars($data["name"] ?? "");
-$email = filter_var($data["address"] ?? "", FILTER_VALIDATE_EMAIL); // email input
-$phone = htmlspecialchars($data["Number"] ?? "");
-$business = htmlspecialchars($data["name-2"] ?? "");
-$project = htmlspecialchars($data["Project"] ?? "");
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
-if (!$email) {
-    http_response_code(400);
-    echo json_encode(["success" => false, "error" => "Invalid email address"]);
-    exit;
-}
+$mail = new PHPMailer(true);
 
-$to = "tanshanyu2004@gmail.com";
-$subject = "New Contact Form Submission";
-$message = "
-    <h3>New Contact Form Submission</h3>
-    <p><strong>Name:</strong> $name</p>
-    <p><strong>Email:</strong> $email</p>
-    <p><strong>Phone:</strong> $phone</p>
-    <p><strong>Business:</strong> $business</p>
-    <p><strong>Project:</strong> $project</p>
-";
+try {
+    // SMTP setup
+    $mail->isSMTP();
+    $mail->Host = "mail.keteca.com";
+    $mail->SMTPAuth = true;
+    $mail->Username = "smtp@keteca.com";
+    $mail->Password = "Smtp7878Ktc$";
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+    $mail->Port = 465;
 
-// Headers: From is the email input
-$headers  = "MIME-Version: 1.0" . "\r\n";
-$headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-$headers .= "From: $email" . "\r\n";
-$headers .= "Reply-To: $email" . "\r\n";
+    // Recipients
+	
+    $mail->setFrom("smtp@keteca.com", "Contact Form"); // send from must be smtp server for auth
+    $mail->addAddress("tanshanyu2004@gmail.com"); // send to
+    $mail->addReplyTo($email, $name);
 
-if (mail($to, $subject, $message, $headers)) {
+    // Content
+    $mail->Subject = $subject;
+    $mail->Body = "From: $name <$email>\n\nMessage:\n$message";
+
+    $mail->send();
+
     echo json_encode(["success" => true]);
-} else {
-    http_response_code(500);
-    echo json_encode(["success" => false, "error" => "Mail failed"]);
+} catch (Exception $e) {
+    echo json_encode(["success" => false, "error" => $mail->ErrorInfo]);
 }
+?>
 

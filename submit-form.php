@@ -50,7 +50,7 @@ try {
     $mail->Host = "mail.keteca.com";
     $mail->SMTPAuth = true;
     $mail->Username = "smtp@keteca.com";
-    $mail->Password = "Smtp7878Ktc$";
+    $mail->Password = "";
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     $mail->Port = 465;
 
